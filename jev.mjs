@@ -1,15 +1,37 @@
-import {IT_MODEL, loadGemmaDecision} from './transformers-adapter.mjs';
+import {loadGemmaDecision} from './transformers-adapter.mjs';
 import {classify, normalizeCandidates} from './classifier.mjs';
+
+export const JEV_MODEL = 'ohtaman/jev-gemma-4-E2B-it-choice-64';
+
+async function loadChoiceManifest(modelId) {
+  const local = modelId.startsWith('local:');
+  const id = local ? modelId.slice('local:'.length) : modelId;
+  const url = local ? `/models/${id}/choice_head_64.json` :
+    `https://huggingface.co/${id}/resolve/main/choice_head_64.json`;
+  const response = await fetch(url);
+  if (response.status === 404) return null; // full-vocabulary ONNX artifact
+  if (!response.ok) throw new Error(`choice manifest: HTTP ${response.status}`);
+  const manifest = await response.json();
+  const {labels, token_ids: ids} = manifest;
+  if (!Array.isArray(labels) || !Array.isArray(ids) || labels.length !== 64 ||
+      ids.length !== 64 || new Set(ids).size !== 64 ||
+      ids.some(id => !Number.isInteger(id) || id < 0)) {
+    throw new Error('Invalid 64-label model manifest');
+  }
+  return new Map(ids.map((id, index) => [id, index]));
+}
 
 /**
  * Load a Transformers.js-compatible Gemma 4 ONNX model for choice scoring.
  * Call dispose() when the classifier is no longer needed.
  */
-export async function loadJev({modelId = IT_MODEL, onProgress} = {}) {
+export async function loadJev({modelId = JEV_MODEL, onProgress} = {}) {
   if (typeof modelId !== 'string' || !modelId.trim()) {
     throw new Error('modelId を指定してください');
   }
-  const {decision, processor, model} = await loadGemmaDecision(modelId, onProgress);
+  const tokenToLogitIndex = await loadChoiceManifest(modelId);
+  const {decision, processor, model} = await loadGemmaDecision(modelId, onProgress,
+    {tokenToLogitIndex});
   return createJevClassifier({decision, processor, model});
 }
 

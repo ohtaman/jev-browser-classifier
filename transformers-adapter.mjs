@@ -4,7 +4,8 @@ import {TransformersDecision} from './transformers-decision.mjs';
 export const IT_MODEL = 'onnx-community/gemma-4-E2B-it-ONNX';
 
 /** modelId must contain a Transformers.js-compatible Gemma 4 ONNX export. */
-export async function loadGemmaDecision(modelId, onProgress = () => {}) {
+export async function loadGemmaDecision(modelId, onProgress = () => {},
+  {tokenToLogitIndex = null} = {}) {
   const local = modelId.startsWith('local:');
   const id = local ? modelId.slice('local:'.length) : modelId;
   const previous = {path: env.localModelPath, local: env.allowLocalModels,
@@ -34,7 +35,7 @@ export async function loadGemmaDecision(modelId, onProgress = () => {}) {
   }
   const tokenize = text => processor(text, null, null, {add_special_tokens: false});
   const decision = new TransformersDecision({
-    modelId, tokenize,
+    modelId, tokenize, tokenToLogitIndex,
     async forward(input) {
       const output = await model({...input,
         num_logits_to_keep: new Tensor('int64', [1n], [])});
