@@ -1,12 +1,11 @@
 {
-  "name": "jev-browser-decision-demo",
+  "name": "jev-browser-classifier",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
-    "test": "node --test classifier.test.mjs"
-  },
+  "exports": {".": "./jev.mjs"},
+  "files": ["jev.mjs", "classifier.mjs", "transformers-adapter.mjs", "transformers-decision.mjs"],
+  "scripts": {"dev": "vite --host 127.0.0.1", "build": "vite build", "test": "node --test *.test.mjs"},
   "dependencies": {"@huggingface/transformers": "^4.3.0"},
   "devDependencies": {"vite": "^7.0.0"}
 }

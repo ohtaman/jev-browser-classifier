@@ -1,9 +1,10 @@
 /** Compare the first answer token's logits. No generation or sampling occurs. */
 export class TransformersDecision {
-  constructor({tokenize, forward, modelId}) {
+  constructor({tokenize, forward, modelId, tokenToLogitIndex = null}) {
     this.tokenize = tokenize;
     this.forward = forward;
     this.modelId = modelId;
+    this.tokenToLogitIndex = tokenToLogitIndex;
   }
 
   async choice(prompt, labels = ['1', '2', '3']) {
@@ -25,6 +26,11 @@ export class TransformersDecision {
     if (new Set(labelIds).size !== labelIds.length) {
       throw new Error('Labels resolve to duplicate token IDs');
     }
+    const indices = labelIds.map(id => this.tokenToLogitIndex ?
+      this.tokenToLogitIndex.get(id) : id);
+    if (indices.some(index => !Number.isInteger(index) || index < 0)) {
+      throw new Error('One or more labels are missing from the model output head');
+    }
     const tokenizeMs = performance.now() - start;
     const rawLogits = await this.forward(input);
     const logits = rawLogits.type === 'float16' ? rawLogits.to('float32') : rawLogits;
@@ -33,7 +39,10 @@ export class TransformersDecision {
       throw new Error(`Unexpected logits shape: ${JSON.stringify(dims)}`);
     }
     const offset = (dims[1] - 1) * dims[2];
-    const values = labelIds.map(id => Number(data[offset + id]));
+    if (indices.some(index => index >= dims[2])) {
+      throw new Error('Model logits width does not include a requested label');
+    }
+    const values = indices.map(index => Number(data[offset + index]));
     if (values.some(value => !Number.isFinite(value))) {
       throw new Error('Missing or nonfinite candidate logit');
     }

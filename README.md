@@ -1,5 +1,29 @@
 # Jev browser classifier
 
+## JavaScript API
+
+Install the source package in a browser app with a bundler such as Vite:
+
+```sh
+npm install github:ohtaman/jev-browser-classifier
+```
+
+```js
+import {loadJev} from 'jev-browser-classifier';
+
+const jev = await loadJev(); // Jev Gemma 4 E2B IT choice-64 ONNX, WebGPU
+const result = await jev.classify({
+  text: '注文した荷物がまだ届いていません。',
+  candidates: ['配送', '請求', '技術'],
+});
+console.log(result.prediction, result.scores);
+await jev.dispose();
+```
+
+`candidates` accepts 2–64 strings or objects such as `{name: '配送', description: '荷物の未着'}`. Optional `question` and `examples` customize the prompt. `loadJev({modelId, onProgress})` can select a compatible Gemma 4 ONNX model and report download progress. Load once, classify multiple texts, then dispose of the model. The returned `scores` include each candidate's raw logit and a value normalized across the supplied candidates. The normalized values are not calibrated probabilities.
+
+The default model is [ohtaman/jev-gemma-4-E2B-it-choice-64](https://huggingface.co/ohtaman/jev-gemma-4-E2B-it-choice-64), a text-only 64-output ONNX artifact derived from Gemma 4 E2B IT. `loadJev({modelId})` can also use a full-vocabulary compatible Gemma 4 ONNX model; it reads the choice manifest when present. This API runs in a WebGPU browser. Model loading transfers several GB from Hugging Face and may happen again after a page reload.
+
 A browser based general purpose classifier using Gemma 4 E2B IT and Transformers.js. Enter text, a question, and 2–64 named categories. The app compares the first answer token's logits in one forward pass. It does not generate an answer or call a classification API.
 
 **Open the site:** https://ohtaman.github.io/jev-browser-classifier/

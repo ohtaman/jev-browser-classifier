@@ -12,7 +12,22 @@ export function parseCandidates(source) {
     const separator = line.indexOf(':');
     const name = (separator < 0 ? line : line.slice(0, separator)).trim();
     const description = (separator < 0 ? line : line.slice(separator + 1)).trim();
-    if (!name) throw new Error(`${index + 1}行目のカテゴリ名が空です`);
+    return {name, description};
+  });
+  return normalizeCandidates(candidates);
+}
+
+export function normalizeCandidates(items) {
+  if (!Array.isArray(items)) throw new Error('カテゴリを配列で指定してください');
+  const candidates = items.map((item, index) => {
+    const candidate = typeof item === 'string' ? {name: item, description: ''} : item;
+    if (!candidate || typeof candidate.name !== 'string' ||
+        (candidate.description !== undefined && typeof candidate.description !== 'string')) {
+      throw new Error(`${index + 1}番目のカテゴリは文字列か {name, description} で指定してください`);
+    }
+    const name = candidate.name.trim();
+    const description = (candidate.description ?? '').trim();
+    if (!name) throw new Error(`${index + 1}番目のカテゴリ名が空です`);
     return {name, description};
   });
   if (candidates.length < 2 || candidates.length > CHOICE_LABELS.length) {
