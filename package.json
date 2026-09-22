@@ -1,0 +1,12 @@
+{
+  "name": "jev-browser-decision-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test classifier.test.mjs"
+  },
+  "dependencies": {"@huggingface/transformers": "^4.3.0"},
+  "devDependencies": {"vite": "^7.0.0"}
+}

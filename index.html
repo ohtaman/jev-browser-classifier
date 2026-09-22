@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev ブラウザ分類器</title>
+<style>
+  :root{font-family:system-ui,"Hiragino Kaku Gothic ProN",sans-serif;color:#202a24;background:#f5f6f2}
+  body{margin:0}main{max-width:850px;margin:auto;padding:28px 20px 70px}
+  h1{font-size:clamp(28px,5vw,42px);margin:0 0 12px}h2{font-size:20px;margin:0 0 18px}
+  p{line-height:1.7}.intro{color:#4b5e50}.box{background:#fff;border:1px solid #d4dcd2;padding:24px;margin-top:20px;border-radius:10px}
+  label{font-weight:700;display:block;margin:19px 0 7px}label small{font-weight:400;color:#64756a}
+  input,textarea{box-sizing:border-box;width:100%;border:1px solid #aab8ac;border-radius:6px;padding:11px 12px;font:14px/1.5 inherit;background:white;color:#202a24}
+  textarea{min-height:100px;resize:vertical}#candidates{min-height:125px}#examples{min-height:130px}
+  button{border:0;background:#176b4b;color:#fff;padding:13px 21px;border-radius:6px;font-weight:700;cursor:pointer;margin-top:20px}button:disabled{opacity:.5;cursor:wait}
+  details{margin-top:20px}summary{cursor:pointer;font-weight:700}.help,small{font-size:12px;color:#64756a}#status{white-space:pre-wrap;font-size:13px;color:#496152;margin-top:20px}
+  .score{margin:20px 0}.score-head{display:flex;justify-content:space-between;gap:12px}.score-head code{white-space:nowrap}.track{height:9px;border-radius:8px;background:#e4ebe4;margin-top:7px;overflow:hidden}.fill{height:100%;background:#6eac88}.score.winner .fill{background:#176b4b}.score.winner .score-head{font-weight:700}
+  #prediction{font-size:28px;color:#176b4b;margin:0}.links{font-size:13px;margin-top:28px}a{color:#176b4b}
+</style>
+<main>
+  <h1>Jev ブラウザ分類器</h1>
+  <p class="intro">文章とカテゴリを入力して「分類する」を押すだけ。Gemma 4 E2B IT が最初の回答トークンの logits を比較します。生成は行いません。</p>
+  <form id="form" class="box">
+    <h2>分類する</h2>
+    <label for="input">文章</label>
+    <textarea id="input" required>注文した荷物がまだ届いていません。配送状況を確認したいです。</textarea>
+    <label for="question">質問</label>
+    <input id="question" required value="最も適切な問い合わせ先は？">
+    <label for="candidates">カテゴリ <small>1行に1つ。「名前: 説明」</small></label>
+    <textarea id="candidates" required>配送: 荷物の遅延、未着、配送状況
+請求: 料金、返金、支払い
+技術: アプリの不具合、ログイン、操作方法</textarea>
+    <details><summary>Few-shot 例を追加（任意）</summary>
+      <p class="help">同じカテゴリ順とラベルで &lt;input&gt; / &lt;output&gt; の例を書いてください。</p>
+      <textarea id="examples" placeholder="&lt;input&gt;&#10;state: 二重請求されています&#10;question1: 最も適切な問い合わせ先は？&#10;1. 配送&#10;2. 請求&#10;3. 技術&#10;&lt;/input&gt;&#10;&lt;output&gt;&#10;2&#10;&lt;/output&gt;"></textarea>
+    </details>
+    <details><summary>モデル設定</summary>
+      <label for="modelId">Transformers.js 対応 Gemma 4 ONNX モデル ID</label>
+      <input id="modelId" value="onnx-community/gemma-4-E2B-it-ONNX">
+      <p class="help">モデル読み込み時は数 GB の転送が必要です。WebGPU 対応ブラウザで開いてください。</p>
+    </details>
+    <button id="run" type="submit">分類する</button>
+    <p id="status" role="status">待機中</p>
+  </form>
+  <section id="result" class="box" hidden aria-live="polite">
+    <h2>結果</h2><p id="prediction"></p>
+    <p class="help">表示する比率は指定した候補内だけで正規化した値です。校正済みの正解確率ではありません。</p>
+    <div id="scores"></div><p id="timing" class="help"></p>
+    <button id="download" type="button">結果を JSON で保存</button>
+  </section>
+</main>
+<script type="module" src="./classifier-app.mjs"></script>
+</html>
